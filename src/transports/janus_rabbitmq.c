@@ -570,9 +570,15 @@ int janus_rabbitmq_connect(void) {
 	}
 	JANUS_LOG(LOG_VERB, "Connecting to RabbitMQ server...\n");
 	status = amqp_socket_open(socket, rmqhost, rmqport);
-	if(status != AMQP_STATUS_OK) {
+
+	while (status != AMQP_STATUS_OK) {
 		JANUS_LOG(LOG_FATAL, "Can't connect to RabbitMQ server: error opening socket... (%s)\n", amqp_error_string2(status));
-		return -1;
+		JANUS_LOG(LOG_FATAL, "EE Retrying after 3 seconds...\n");
+
+		g_usleep(3000000);
+
+		status = amqp_socket_open(socket, rmqhost, rmqport);
+		// return -1;
 	}
 	JANUS_LOG(LOG_VERB, "Logging in...\n");
 	amqp_rpc_reply_t result = amqp_login(rmq_client->rmq_conn, vhost, 0, 131072, heartbeat, AMQP_SASL_METHOD_PLAIN, username, password);
