@@ -1,0 +1,36 @@
+# This configures the RabbitMQ event handler.
+
+general: {
+	enabled = true					# By default the module is not enabled
+	events = "all"					# Comma separated list of the events mask you're interested
+									# in. Valid values are none, sessions, handles, jsep, webrtc,
+									# media, plugins, transports, core, external and all. By
+									# default we subscribe to everything (all)
+	grouping = true					# Whether events should be sent individually , or if it's ok
+									# to group them. The default is 'yes' to limit the number of
+									# messages
+	json = "indented"				# Whether the JSON messages should be indented (default),
+									# plain (no indentation) or compact (no indentation and no spaces)
+	host = "rabbitmq"				# The address of the RabbitMQ server
+	port = 5672					# The port of the RabbitMQ server (5672 by default)
+	username = "ee"				# Username to use to authenticate, if needed
+	password = "eermq"				# Password to use to authenticate, if needed
+	vhost = "/"					# Virtual host to specify when logging in, if needed
+	janus_exchange = "janus-exchange"
+	janus_exchange_type  = "topic" 		# Rabbitmq exchange_type can be one of the available types: direct, topic, headers and fanout (fanout by defualt).
+	queue_name = "to.janus.dell2"		# Queue name for incoming messages (if set and janus_exchange_type is topic/direct, to_janus will be the routing key the queue is bound to the exchange on)
+	to_janus = "ignored"
+	from_janus = "from.dell2"
+
+	#heartbeat = 60 				# Defines the seconds without communication that should pass before considering the TCP connection unreachable.
+	declare_outgoing_queue = false # By default (for backwards compatibility), we declare an outgoing queue. Set this to false to disable that behavior
+
+	#ssl_enable = false				# Whether ssl support must be enabled
+	#ssl_verify_peer = true			# Whether peer verification must be enabled
+	#ssl_verify_hostname = true		# Whether hostname verification must be enabled
+
+	# Certificates to use when SSL support is enabled, if needed
+	#ssl_cacert = "/path/to/cacert.pem"
+	#ssl_cert = "/path/to/cert.pem"
+	#ssl_key = "/path/to/key.pem"
+}
