@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   janus-ee:
-    image: localhost:5000/janus-ee
+    image: 192.168.1.33:5000/v2/janus-ee
 
     build:
       context: .
