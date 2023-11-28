@@ -1,0 +1,80 @@
+name: Create and publish a Docker image
+
+run-name: ${{ github.actor }} - ${{ github.event.head_commit.message }} 🚀
+on: [push]
+
+jobs:
+  Build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+      GIT_HASH: ${{github.sha}}
+    
+    steps:      
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: echo "💡 The ${{ env.IMAGE_NAME }} repository has been cloned to the runner."
+      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
+
+      - name: Generate JSON array of commit(s) pushed to the branch
+        id: json_commits
+        run: |
+          JSON_ARRAY=$(git log --format='{ "name": "%h", "value": "``` %s \n  -%aN ```" }' ${{ github.event.before }}..${{ github.sha }} | jq -s '. | reverse')
+          echo "Commits JSON Array: $JSON_ARRAY"
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$JSON_ARRAY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - run: echo "🍏 This job's status is ${{ job.status }}."
+
+      
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        id: docker_build
+        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{env.IMAGE_NAME}}:latest
+            ghcr.io/${{env.IMAGE_NAME}}:${{ env.GIT_HASH }}
+      
+      - name: Convert Outcome to Uppercase
+        run: echo "DOCKER_BUILD_OUTCOME_UPPERCASE=$(echo ${{ steps.docker_build.outcome }} | tr '[:lower:]' '[:upper:]')" >> $GITHUB_ENV
+
+      - name: Set Embed Color
+        run: |
+          if [ "${{ env.DOCKER_BUILD_OUTCOME_UPPERCASE }}" == 'SUCCESS' ]; then
+            echo "EMBED_COLOR=65280" >> $GITHUB_ENV
+          elif [ "${{ env.DOCKER_BUILD_OUTCOME_UPPERCASE }}" == 'FAILURE' ]; then
+            echo "EMBED_COLOR=16711680" >> $GITHUB_ENV
+          elif [ "${{ env.DOCKER_BUILD_OUTCOME_UPPERCASE }}" == 'CANCELLED' ]; then
+            echo "EMBED_COLOR=16776960" >> $GITHUB_ENV
+          elif [ "${{ env.DOCKER_BUILD_OUTCOME_UPPERCASE }}" == 'SKIPPED' ]; then
+            echo "EMBED_COLOR=8421504" >> $GITHUB_ENV
+          fi
+
+      - name: Discord notification
+        if : always()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          DISCORD_USERNAME: "Vinstabot"
+          DISCORD_AVATAR: "https://cdn.discordapp.com/icons/1173572712384450560/fe0531e191240f967bede1ebf92ca944.webp?size=96"
+          DISCORD_EMBEDS: '[{"title": "${{ env.IMAGE_NAME }} #${{ github.run_number }}", "description": "**Build:** ${{ github.run_id }}\n**Status:** ${{ env.DOCKER_BUILD_OUTCOME_UPPERCASE }}\n**Attempt:** ${{ github.run_attempt }}\n**Changes:**\n","fields": ${{steps.json_commits.outputs.commits}}, "color": ${{ env.EMBED_COLOR }}, "timestamp": "${{ github.event.head_commit.timestamp }}"}]'
+        uses: Ilshidur/action-discord@0.3.2
