@@ -137,8 +137,6 @@ COPY startup.sh /opt/janus/startup.sh
 
 RUN chmod +x /opt/janus/startup.sh
 
-EXPOSE 8088 8188
-
 USER janus:janus
 
 CMD ["/bin/bash","-c","/opt/janus/startup.sh"]
