@@ -131,7 +131,7 @@ RUN set -ex; \
     ; \
     rm -rf /var/lib/apt/lists/*;
 
-COPY janus.jcfg janus.plugin.videoroom.jcfg janus.transport.rabbitmq.jcfg  /opt/janus/etc/janus/
+COPY janus.tmplt.jcfg janus.plugin.videoroom.jcfg janus.transport.rabbitmq.tmplt.jcfg  /opt/janus/etc/janus/
 
 COPY startup.sh /opt/janus/startup.sh
 
